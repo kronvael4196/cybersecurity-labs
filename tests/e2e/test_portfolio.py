@@ -44,7 +44,7 @@ def test_pki_identity_sign_verify_and_revoke(page, tmp_path):
     page.locator('#verify input[name="signature"]').set_input_files(signature)
     page.get_by_role("button", name="Verificar firma", exact=True).click()
     expect(page.locator("#verification")).to_contain_text("Firma válida")
-    page.screenshot(path=str(EVIDENCE / "pki-firma-valida.png"), full_page=True, mask=[page.locator("#token")])
+    page.screenshot(path=str(EVIDENCE / "pki-firma-valida.png"), full_page=True, mask=[page.locator("#token")], mask_color="#263e52")
     source.write_text("Contenido modificado", encoding="utf-8")
     page.locator('#verify input[name="file"]').set_input_files(source)
     page.get_by_role("button", name="Verificar firma", exact=True).click()
@@ -56,12 +56,15 @@ def test_pki_identity_sign_verify_and_revoke(page, tmp_path):
     expect(page.locator("#status")).to_contain_text("Certificado revocado")
     page.get_by_role("button", name="Verificar firma", exact=True).click()
     expect(page.locator("#verification")).to_contain_text("Certificado revocado")
-    page.screenshot(path=str(EVIDENCE / "pki-revocacion.png"), full_page=True, mask=[page.locator("#token")])
+    page.screenshot(path=str(EVIDENCE / "pki-revocacion.png"), full_page=True, mask=[page.locator("#token")], mask_color="#263e52")
 
 
 def test_home_lab_and_scanner_report(page):
     page.goto("http://localhost:3001")
-    expect(page.get_by_text("OWASP Juice Shop", exact=False).first).to_be_visible(timeout=60000)
+    expect(page.get_by_role("heading", name="Welcome to OWASP Juice Shop!")).to_be_visible(timeout=60000)
+    page.get_by_role("button", name="dismiss cookie message").click()
+    page.get_by_role("button", name="Close Welcome Banner").click()
+    expect(page.get_by_text("All Products", exact=True)).to_be_visible()
     page.screenshot(path=str(EVIDENCE / "juice-shop.png"), full_page=True)
     page.goto("http://localhost:3003")
     expect(page.get_by_role("heading", name="Prácticas web: hardened")).to_be_visible()
@@ -75,13 +78,18 @@ def test_home_lab_and_scanner_report(page):
 
 
 def test_kibana_live_dashboard(page):
+    errors = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
     page.goto("http://localhost:5601/app/dashboards#/view/mini-siem-overview")
     expect(page.get_by_text("Mini SIEM — actividad SSH", exact=False).first).to_be_visible(timeout=120000)
     expect(page.get_by_text("Autenticaciones fallidas", exact=False).first).to_be_visible(timeout=60000)
-    page.screenshot(path=str(EVIDENCE / "kibana-diagnostic.png"), full_page=True)
-    (EVIDENCE / "kibana-diagnostic.html").write_text(page.content(), encoding="utf-8")
     # Wait for actual metric rendering, not merely the dashboard shell.
-    expect(page.locator('[data-test-subj="metric_value"]').first).to_be_visible(timeout=60000)
+    try:
+        expect(page.locator('[data-test-subj="metric_value"]').first).to_be_visible(timeout=60000)
+    finally:
+        page.screenshot(path=str(EVIDENCE / "kibana-diagnostic.png"), full_page=True)
+        (EVIDENCE / "kibana-diagnostic.html").write_text(page.content(), encoding="utf-8")
+        (EVIDENCE / "kibana-errors.json").write_text(json.dumps(errors), encoding="utf-8")
     assert page.locator('[data-test-subj="metric_value"]').count() >= 3
     values = page.locator('[data-test-subj="metric_value"]').all_text_contents()
     assert all(re.search(r"[1-9]", value) for value in values), values

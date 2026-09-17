@@ -17,7 +17,12 @@ def objects():
         result.append({"type": "visualization", "id": identity, "attributes": {
             "title": title, "description": "Contador de datos reales del laboratorio",
             "visState": json.dumps({"title": title, "type": "metric", "params": {
-                "metric": {"style": {"fontSize": 60}, "percentageMode": False}},
+                "addTooltip": True, "addLegend": False, "type": "metric",
+                "metric": {"style": {"fontSize": 60, "bgFill": "#000", "bgColor": False,
+                                      "labelColor": False, "subText": ""},
+                           "percentageMode": False, "useRanges": False, "colorSchema": "Green to Red",
+                           "metricColorMode": "None", "colorsRange": [{"from": 0, "to": 10000}],
+                           "labels": {"show": True}, "invertColors": False}},
                 "aggs": [{"id": "1", "enabled": True, "type": "count", "schema": "metric", "params": {}}]}),
             "uiStateJSON": "{}", "version": 1,
             "kibanaSavedObjectMeta": {"searchSourceJSON": json.dumps(search)}},
