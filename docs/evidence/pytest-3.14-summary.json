@@ -1,0 +1,42 @@
+[
+  {
+    "project": "01-mini-siem",
+    "exit_code": 0,
+    "tests": 8,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  {
+    "project": "02-vulnerable-home-lab",
+    "exit_code": 0,
+    "tests": 3,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  {
+    "project": "03-network-scanner",
+    "exit_code": 0,
+    "tests": 5,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  {
+    "project": "04-vpn-traffic-monitor",
+    "exit_code": 0,
+    "tests": 3,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  {
+    "project": "05-pki-digital-signature",
+    "exit_code": 0,
+    "tests": 12,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  }
+]

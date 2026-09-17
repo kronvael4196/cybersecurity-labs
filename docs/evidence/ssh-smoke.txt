@@ -1,0 +1,7 @@
+Fallo de autenticación 1/5 generado.
+Fallo de autenticación 2/5 generado.
+Fallo de autenticación 3/5 generado.
+Fallo de autenticación 4/5 generado.
+Fallo de autenticación 5/5 generado.
+Acceso legítimo verificado.
+Prueba integral OK: {"failure": 5, "success": 1, "alerts": 1}

@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "started_at": "2026-09-17T05:47:09.485111+00:00",
+  "finished_at": "2026-09-17T05:47:09.491303+00:00",
+  "scope": [
+    "127.0.0.0/8",
+    "::1/128"
+  ],
+  "results": [
+    {
+      "ip": "127.0.0.1",
+      "port": 3001,
+      "protocol": "tcp",
+      "state": "open",
+      "service_hint": "http",
+      "service": "http",
+      "findings": [
+        {
+          "severity": "info",
+          "id": "cleartext-http",
+          "detail": "HTTP observado sin TLS; revisar si transporta información sensible."
+        }
+      ],
+      "banner": "HTTP/1.1 200 OK\r\nServer: nginx/1.28.3\r\nDate: Thu, 17 Sep 2026 05:47:09 GMT\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Length: 75002\r\nConnection: close\r\nAccess-Control-Allow-Origin: *\r\nX-Content-Type-Options: nosniff\r\nX-Frame-Options: SAMEORIGIN\r\nFeature-Policy: payment 'self'\r\nX-Recruiting: /#/jobs\r\nAccept-Ranges: bytes\r\nCache-Control: public, max-age=0\r\nLast-Modified: Thu, 17 Sep 2026 05:47:06 GMT\r\nETag: W/\"124fa-1a0ade7865b\"\r\nVary: Accept-Encoding\r\n\r\n",
+      "elapsed_ms": 5.5
+    },
+    {
+      "ip": "127.0.0.1",
+      "port": 3002,
+      "protocol": "tcp",
+      "state": "open",
+      "service_hint": "http",
+      "service": "http",
+      "findings": [
+        {
+          "severity": "info",
+          "id": "cleartext-http",
+          "detail": "HTTP observado sin TLS; revisar si transporta información sensible."
+        }
+      ],
+      "banner": "HTTP/1.1 200 OK\r\nServer: nginx/1.28.3\r\nDate: Thu, 17 Sep 2026 05:47:09 GMT\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: 1016\r\nConnection: close\r\nCache-Control: no-store\r\nSet-Cookie: [redacted]\r\nVary: Cookie\r\n\r\n",
+      "elapsed_ms": 4.15
+    },
+    {
+      "ip": "127.0.0.1",
+      "port": 3003,
+      "protocol": "tcp",
+      "state": "open",
+      "service_hint": "http",
+      "service": "http",
+      "findings": [
+        {
+          "severity": "info",
+          "id": "cleartext-http",
+          "detail": "HTTP observado sin TLS; revisar si transporta información sensible."
+        }
+      ],
+      "banner": "HTTP/1.1 200 OK\r\nServer: nginx/1.28.3\r\nDate: Thu, 17 Sep 2026 05:47:09 GMT\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: 1014\r\nConnection: close\r\nCache-Control: no-store\r\nContent-Security-Policy: default-src 'self'; frame-ancestors 'none'; form-action 'self'\r\nSet-Cookie: [redacted]\r\nVary: Cookie\r\nX-Content-Type-Options: nosniff\r\n\r\n",
+      "elapsed_ms": 3.48
+    }
+  ]
+}

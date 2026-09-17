@@ -1,45 +1,49 @@
 # Estado de validación
 
-Comprobaciones realizadas durante la implementación de la colección.
+Evidencias del 17 de septiembre de 2026. Las pruebas de contenedores se ejecutaron en runners Linux de GitHub Actions; las pruebas Python y el proxy HTTPS también se comprobaron en Windows.
 
-## Ejecutado correctamente
+## Pruebas automatizadas
 
-| Comprobación | Resultado |
+| Suite | Pruebas | Cobertura |
+| --- | ---: | --- |
+| Mini SIEM | 8 | Colector, umbral, ventana, paginación y cooldown |
+| Home Lab | 3 | SQLi, XSS y CSRF frente a sus correcciones |
+| Escáner | 5 | Rangos, alcance, conexión TCP real, escape HTML y ocultación de credenciales en banners |
+| Analizador VPN | 3 | Protocolos, HTTP, IPv6 y entrada vacía |
+| PKI / TLS | 12 | RSA/ECC, firma, revocación, caducidad, CA ajena, persistencia, API y validación TLS estricta |
+| **Total por versión de Python** | **31** | **Python 3.12 y 3.14** |
+
+Las cuatro pruebas de navegador se ejecutan por separado: flujo PKI, Home Lab/escáner, informe pytest y dashboard Kibana. También se comprueban la sintaxis de los cuatro archivos Compose, el JavaScript de la PKI y los archivos versionados frente a patrones de secretos.
+
+## Resultados funcionales
+
+| Escenario | Resultado observado |
 | --- | --- |
-| Mini SIEM: colector, umbral, ventana, paginación y cooldown | 8 pruebas aprobadas |
-| Home Lab: SQLi, XSS y CSRF frente a sus correcciones | 3 pruebas aprobadas |
-| Escáner: rangos, alcance, conexión TCP real y escape HTML | 4 pruebas aprobadas |
-| Analizador VPN: protocolos, HTTP, IPv6 y entrada vacía | 3 pruebas aprobadas |
-| PKI: emisión/firma/verificación RSA/ECC, revocación, caducidad, CA ajena, persistencia y API | 11 pruebas aprobadas |
-| `docker compose config --quiet` | Válido en los cuatro proyectos con Compose |
-| Compilación Python y `node --check` del JavaScript PKI | Sin errores |
-| Servidor PKI real en loopback | `/health`, página, JS, CSS, CA y CRL responden 200 |
-| Prueba HTTP real PKI | RSA/ECC: emisión, firma, verificación, archivo modificado y certificado revocado comprobados |
-| Escáner contra la PKI local | Puerto 5005 abierto; HTTP reconocido; informes JSON/HTML generados |
+| PKI mediante Nginx HTTPS | Identidad `.p12` descargada, archivo firmado y firma válida comprobada desde Chromium |
+| Integridad y revocación | El archivo modificado y el certificado revocado se rechazan |
+| TLS | Certificado de localhost firmado por la CA del laboratorio; clientes y navegador validan la confianza sin omitir TLS |
+| SSH → Logstash → Elasticsearch | Cinco fallos de contraseña y un acceso legítimo confirmados por eventos reales |
+| Detección y Kibana | Una alerta por cinco fallos en 60 segundos; contadores visibles en el dashboard |
+| Escáner → Home Lab | Puertos 3001, 3002 y 3003 abiertos e identificados como HTTP; informes JSON y HTML |
+| Interfaces | Juice Shop y la aplicación corregida responden y se muestran en Chromium |
 
-La primera implementación aprobó 29 pruebas. La ampliación HTTPS añade una prueba de certificado de servidor: **30 pruebas aprobadas con pytest** en Windows. Los informes reales están en `artifacts/pytest/`; la prueba comprueba firma con la CA, SAN localhost/IP, uso serverAuth y correspondencia de clave.
+La [galería de evidencias](docs/evidence/README.md) conserva capturas y resultados seleccionados, con su ejecución de origen y commit. Los informes completos se descargan desde los artefactos de Actions durante 14 días.
 
-## Pendiente por el entorno
+## Entorno local y límites
 
-El cliente Docker y Compose están instalados, pero `docker version` no consigue consultar el servidor: devuelve `500 Internal Server Error` en el endpoint de Docker Desktop Linux. Por eso **no se han construido ni arrancado los contenedores en esta sesión**. Validar un Compose no demuestra que sus imágenes arranquen.
+En Windows se ejecutaron las suites Python y la prueba HTTP real de PKI para RSA/ECC. Nginx portátil sirve la aplicación en `https://localhost:8443`; su CA no se instala automáticamente en el almacén de confianza. Véase [HTTPS](docs/HTTPS.md).
 
-Diagnóstico posterior: el backend de Docker informa `Virtual Machine Platform not enabled` y `No virtualization available`. No se han cambiado características de Windows ni reiniciado el equipo. Las pruebas de contenedores e interfaz se trasladaron al workflow de GitHub Actions; su estado debe comprobarse en la ejecución enlazada desde el README.
+Docker Desktop local informa `Virtual Machine Platform not enabled` y `No virtualization available`. No se modificaron características de Windows ni se reinició el equipo. **Los contenedores y las capturas de interfaz documentados arriba corresponden a GitHub Actions**, no a Docker en este equipo.
 
-Quedan pendientes:
+WireGuard conserva una comprobación pendiente: soporte del kernel, handshake, enrutamiento y captura real con TShark. Sus tres pruebas unitarias analizan filas de ejemplo. Validar su Compose no demuestra un túnel operativo.
 
-- ELK/SSH: ingestión real a Logstash y alerta consultable en Kibana.
-- Home Lab: arranque de Juice Shop y aislamiento de la red Docker.
-- WireGuard: soporte del kernel, handshake, enrutamiento, captura PCAP y ejecución real de TShark. Las pruebas unitarias del analizador usan filas de ejemplo, no una captura de red.
-- PKI dentro de Docker: el flujo HTTP sí fue probado ejecutando Python directamente en Windows.
-- Revisión visual en navegador: no hubo un navegador conectado disponible. Se comprobaron los recursos HTTP y la sintaxis JavaScript, pero no el renderizado ni los clics de la interfaz.
+La red interna del Home Lab y los enlaces a loopback se revisan en la configuración y se usan en las pruebas; no se presenta esto como una auditoría exhaustiva del aislamiento. ELK tiene la autenticación desactivada para el laboratorio local y no debe publicarse en Internet.
 
-## Repetir las pruebas integrales
+## Repetir
 
-Cuando `docker version` muestre Client y Server sin error:
+```powershell
+.\.venv\Scripts\python.exe scripts/pytest_all.py
+.\.venv\Scripts\python.exe scripts/check_secrets.py
+```
 
-1. En `01-mini-siem`, sigue su README para crear `.env`, iniciar ELK y esperar el pipeline; ejecuta `python scripts/smoke.py`.
-2. En `02-vulnerable-home-lab`, ejecuta `docker compose up -d --build` y visita los tres puertos documentados.
-3. En `04-vpn-traffic-monitor`, ejecuta `docker compose up -d --build` y `python smoke.py`.
-4. Para probar la PKI con Docker, detén primero su proceso Python local, inicia el Compose de `05-pki-digital-signature` y ejecuta `python smoke.py`.
-
-Desde la raíz puedes repetir las pruebas sin Docker con `.\.venv\Scripts\python.exe scripts/test_all.py`.
+El workflow [Labs CI](https://github.com/kronvael4196/cybersecurity-labs/actions/workflows/ci.yml) repite las pruebas de contenedores con cada push y pull request. También puede iniciarse manualmente desde Actions. Para repetir localmente, sigue los comandos de despliegue y pruebas del [README](README.md); Docker debe mostrar Client y Server sin errores. El laboratorio VPN incluye su propio `smoke.py` para la comprobación de túnel pendiente.

@@ -125,6 +125,8 @@ En PKI: emite una identidad, firma un archivo y verifica su JSON en la interfaz.
 
 ## CI y evidencias
 
+Consulta la [galería de capturas y resultados verificados](docs/evidence/README.md): firma digital, revocación, Kibana, escáner, Home Lab y pytest.
+
 Cada `push` y `pull_request` ejecuta [.github/workflows/ci.yml](.github/workflows/ci.yml):
 
 1. Pruebas con Python 3.12 y 3.14, revisión de secretos y validación de Compose.

@@ -1,5 +1,7 @@
 # Evidencias reproducibles
 
+La [galería del portafolio](evidence/README.md) conserva una selección revisada de capturas y resultados junto con el commit y la ejecución que los produjeron.
+
 ## Local
 
 `python scripts/pytest_all.py` genera resultados reales en `artifacts/pytest/`: consola, XML JUnit, HTML autocontenido y `summary.json`. Incluye los cinco proyectos y la comprobación del certificado TLS. Estos archivos no se agregan automáticamente a Git.

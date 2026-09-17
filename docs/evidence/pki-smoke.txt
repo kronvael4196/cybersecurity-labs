@@ -1,0 +1,3 @@
+ECC: emisión, firma, verificación, manipulación y revocación OK
+RSA: emisión, firma, verificación, manipulación y revocación OK
+Prueba HTTP integral OK. Las dos identidades de prueba quedaron revocadas.

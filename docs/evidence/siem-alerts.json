@@ -1,0 +1,43 @@
+{
+  "took" : 30,
+  "timed_out" : false,
+  "_shards" : {
+    "total" : 1,
+    "successful" : 1,
+    "skipped" : 0,
+    "failed" : 0
+  },
+  "hits" : {
+    "total" : {
+      "value" : 1,
+      "relation" : "eq"
+    },
+    "max_score" : 1.0,
+    "hits" : [
+      {
+        "_index" : "mini-siem-alerts",
+        "_id" : "503bac4c36d8330816bf474c92aa9cd83c483c864c708facfe8dc2604b0bc1a6",
+        "_score" : 1.0,
+        "_source" : {
+          "@timestamp" : "2026-09-17T05:48:48.717381+00:00",
+          "event" : {
+            "kind" : "alert"
+          },
+          "source" : {
+            "ip" : "127.0.0.1"
+          },
+          "rule" : {
+            "id" : "ssh-repeated-failures",
+            "name" : "Posible fuerza bruta SSH"
+          },
+          "alert" : {
+            "count" : 5,
+            "window_seconds" : 60,
+            "severity" : "high"
+          },
+          "message" : "5 fallos SSH desde 127.0.0.1 en 60 segundos"
+        }
+      }
+    ]
+  }
+}
