@@ -1,0 +1,103 @@
+name: mini-siem
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTIC_VERSION:-9.5.4}
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: -Xms1g -Xmx1g
+    ports:
+      - "127.0.0.1:9200:9200"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    mem_limit: 2g
+    healthcheck:
+      test: [CMD-SHELL, "curl -fsS 'http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s' || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+    restart: unless-stopped
+
+  setup:
+    image: python:3.12-slim
+    working_dir: /app
+    volumes:
+      - ./siem:/app:ro
+    command: [python, -u, app.py, setup]
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:${ELASTIC_VERSION:-9.5.4}
+    environment:
+      LS_JAVA_OPTS: -Xms256m -Xmx256m
+      XPACK_MONITORING_ENABLED: "false"
+    volumes:
+      - ./logstash/pipeline.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+      - ssh-logs:/logs:ro
+      - logstash-data:/usr/share/logstash/data
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+    mem_limit: 1g
+    restart: unless-stopped
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:${ELASTIC_VERSION:-9.5.4}
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+      TELEMETRY_ENABLED: "false"
+    ports:
+      - "127.0.0.1:5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    mem_limit: 1g
+    restart: unless-stopped
+
+  ssh:
+    build: ./ssh
+    environment:
+      SSH_PASSWORD: ${SSH_PASSWORD:?Copia .env.example a .env antes de iniciar}
+    ports:
+      - "127.0.0.1:2222:22"
+    volumes:
+      - ssh-logs:/logs
+      - ssh-keys:/etc/ssh/keys
+    restart: unless-stopped
+
+  detector:
+    image: python:3.12-slim
+    working_dir: /app
+    volumes:
+      - ./siem:/app:ro
+    environment:
+      FAILURE_THRESHOLD: ${FAILURE_THRESHOLD:-5}
+      WINDOW_SECONDS: ${WINDOW_SECONDS:-60}
+      COOLDOWN_SECONDS: ${COOLDOWN_SECONDS:-120}
+      POLL_SECONDS: ${POLL_SECONDS:-5}
+    command: [python, -u, app.py, detect]
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  kibana-setup:
+    image: python:3.12-slim
+    working_dir: /app
+    volumes:
+      - ./siem:/app:ro
+    command: [python, -u, app.py, kibana]
+    depends_on:
+      kibana:
+        condition: service_started
+      setup:
+        condition: service_completed_successfully
+
+volumes:
+  es-data:
+  logstash-data:
+  ssh-logs:
+  ssh-keys:

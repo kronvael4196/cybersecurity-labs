@@ -1,0 +1,150 @@
+name: Labs CI
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: labs-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ['3.12', '3.14']
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - run: python -m pip install -r requirements-dev.txt
+      - run: python scripts/check_secrets.py
+      - run: python scripts/pytest_all.py
+      - name: Validate Compose and JavaScript
+        run: |
+          python scripts/init_labs.py
+          for project in 01-mini-siem 02-vulnerable-home-lab 04-vpn-traffic-monitor 05-pki-digital-signature; do
+            (cd "$project" && docker compose config --quiet)
+          done
+          node --check 05-pki-digital-signature/static/app.js
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: pytest-${{ matrix.python }}
+          path: artifacts/pytest/
+          retention-days: 14
+  web-integration:
+    needs: unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: |
+          python -m pip install -r requirements-browser.txt
+          python -m playwright install --with-deps chromium
+          sudo apt-get update
+          sudo apt-get install -y libnss3-tools
+      - run: python scripts/pytest_all.py
+      - name: Deploy HTTPS PKI and isolated Home Lab
+        run: |
+          python scripts/init_labs.py
+          docker compose -f 05-pki-digital-signature/compose.yaml --env-file 05-pki-digital-signature/.env up -d --build --wait --wait-timeout 180
+          docker compose -f 02-vulnerable-home-lab/compose.yaml up -d --build
+          mkdir -p artifacts
+          docker compose -f 05-pki-digital-signature/compose.yaml --env-file 05-pki-digital-signature/.env cp tls-init:/app/tls/ca.pem artifacts/ca.pem
+          docker compose -f 05-pki-digital-signature/compose.yaml --env-file 05-pki-digital-signature/.env exec -T proxy nginx -t
+          python scripts/wait_http.py https://localhost:8443/health --ca artifacts/ca.pem
+          python scripts/wait_http.py http://localhost:3001 --seconds 180
+          python scripts/wait_http.py http://localhost:3002
+          python scripts/wait_http.py http://localhost:3003
+      - name: Trust only the ephemeral CI CA for browser tests
+        run: |
+          sudo cp artifacts/ca.pem /usr/local/share/ca-certificates/lab-ci.crt
+          sudo update-ca-certificates
+          mkdir -p "$HOME/.pki/nssdb"
+          certutil -N -d "sql:$HOME/.pki/nssdb" --empty-password
+          certutil -A -d "sql:$HOME/.pki/nssdb" -n "Lab CI CA" -t 'C,,' -i artifacts/ca.pem
+      - name: Audit containers and exercise PKI over verified TLS
+        run: |
+          python 03-network-scanner/scanner.py 127.0.0.1 --ports 3001-3003 --probe --output artifacts/scanner/home-lab
+          SSL_CERT_FILE="$PWD/artifacts/ca.pem" PKI_BASE_URL=https://localhost:8443 python 05-pki-digital-signature/smoke.py | tee artifacts/pki-smoke.txt
+          curl --fail --cacert artifacts/ca.pem -I https://localhost:8443/health > artifacts/https-headers.txt
+      - name: Functional interface tests and screenshots
+        run: python -m pytest tests/e2e -k 'not kibana' -v --tb=short --junitxml=artifacts/e2e-web.xml --html=artifacts/e2e-web.html --self-contained-html
+      - name: Collect container logs
+        if: always()
+        run: |
+          mkdir -p artifacts
+          docker compose -f 05-pki-digital-signature/compose.yaml --env-file 05-pki-digital-signature/.env logs --no-color > artifacts/pki-containers.txt
+          docker compose -f 02-vulnerable-home-lab/compose.yaml logs --no-color > artifacts/home-lab-containers.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: web-functional-evidence
+          path: |
+            artifacts/screenshots/
+            artifacts/scanner/
+            artifacts/e2e-web.*
+            artifacts/*-containers.txt
+            artifacts/pki-smoke.txt
+            artifacts/https-headers.txt
+          retention-days: 14
+  siem-integration:
+    needs: unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: |
+          python -m pip install -r requirements-browser.txt
+          python -m playwright install --with-deps chromium
+          python scripts/init_labs.py
+          sudo sysctl -w vm.max_map_count=1048576
+      - name: Deploy ELK and wait for ingestion
+        working-directory: 01-mini-siem
+        run: |
+          docker compose up -d --build
+          python ../scripts/wait_http.py http://localhost:9200/_cluster/health --seconds 300
+          python ../scripts/wait_http.py http://localhost:5601/api/status --seconds 420
+          docker compose wait kibana-setup
+          for attempt in $(seq 1 90); do
+            if docker compose exec -T logstash curl -fsS http://localhost:9600/_node/stats/pipelines/main >/dev/null; then break; fi
+            if [ "$attempt" = 90 ]; then exit 1; fi
+            sleep 3
+          done
+      - name: Generate SSH failures and verify real alerts
+        working-directory: 01-mini-siem
+        run: |
+          mkdir -p ../artifacts
+          python scripts/smoke.py | tee ../artifacts/ssh-smoke.txt
+          curl --fail 'http://localhost:9200/mini-siem-alerts/_search?pretty' > ../artifacts/siem-alerts.json
+          python ../scripts/kibana_dashboard.py
+      - name: Capture live Kibana dashboard
+        run: python -m pytest tests/e2e -k kibana -v --tb=short --junitxml=artifacts/e2e-siem.xml --html=artifacts/e2e-siem.html --self-contained-html
+      - name: Collect ELK logs
+        if: always()
+        run: |
+          mkdir -p artifacts
+          docker compose -f 01-mini-siem/compose.yaml --env-file 01-mini-siem/.env logs --no-color --tail 150 > artifacts/siem-containers.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: siem-functional-evidence
+          path: |
+            artifacts/screenshots/
+            artifacts/e2e-siem.*
+            artifacts/ssh-smoke.txt
+            artifacts/siem-alerts.json
+            artifacts/siem-containers.txt
+          retention-days: 14

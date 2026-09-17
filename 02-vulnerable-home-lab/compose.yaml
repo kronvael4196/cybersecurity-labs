@@ -1,0 +1,27 @@
+name: vulnerable-home-lab
+services:
+  juice-shop:
+    image: bkimminich/juice-shop:v19.0.0
+    ports: ["127.0.0.1:3001:3000"]
+    networks: [lab]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+  vulnerable:
+    build: ./lessons
+    environment:
+      LAB_MODE: vulnerable
+    ports: ["127.0.0.1:3002:8080"]
+    networks: [lab]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+  hardened:
+    build: ./lessons
+    environment:
+      LAB_MODE: hardened
+    ports: ["127.0.0.1:3003:8080"]
+    networks: [lab]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+networks:
+  lab:
+    internal: true

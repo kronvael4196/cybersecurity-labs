@@ -1,0 +1,8 @@
+<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width">
+<title>Prácticas web</title><link rel="stylesheet" href="/static/style.css">
+<main><p>CYBERSECURITY LABS / 02</p><h1>Prácticas web: {{ mode }}</h1>
+<p>Datos ficticios. Compara esta instancia con la otra variante del laboratorio.</p>
+<section><h2>01 / Consultas SQL</h2><form action="/search"><label>Buscar producto <input name="q" value="Manual"></label><button>Buscar</button></form></section>
+<section><h2>02 / Escape de HTML</h2><form action="/echo"><label>Mensaje <input name="message" value="Hola"></label><button>Mostrar</button></form></section>
+<section><h2>03 / Protección CSRF</h2><p>Correo de esta sesión: {{ email }}</p><form action="/profile" method="post"><input type="hidden" name="csrf" value="{{ token }}"><label>Correo <input name="email" type="email" value="analyst@example.test"></label><button>Actualizar</button></form></section>
+</main></html>

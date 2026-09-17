@@ -1,0 +1,83 @@
+name: vpn-traffic-lab
+services:
+  init:
+    build: .
+    command: [python, /app/vpn.py, init]
+    volumes:
+      - server-keys:/server
+      - client-keys:/client
+    network_mode: none
+  vpn:
+    build: .
+    command: [python, -u, /app/vpn.py, server]
+    cap_add: [NET_ADMIN]
+    sysctls:
+      net.ipv4.ip_forward: "1"
+    volumes:
+      - server-keys:/keys:ro
+    networks:
+      transport:
+        ipv4_address: 172.30.77.2
+      private:
+        ipv4_address: 172.30.78.2
+    depends_on:
+      init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: [CMD, wg, show, wg0]
+      interval: 3s
+      retries: 15
+  client:
+    build: .
+    command: [python, -u, /app/vpn.py, client]
+    cap_add: [NET_ADMIN]
+    volumes:
+      - client-keys:/keys:ro
+    networks: [transport]
+    depends_on:
+      vpn:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, wg, show, wg0]
+      interval: 3s
+      retries: 15
+  web:
+    image: python:3.12-slim
+    command: [python, -m, http.server, "8080", --directory, /site]
+    volumes:
+      - ./site:/site:ro
+    networks:
+      private:
+        ipv4_address: 172.30.78.10
+  capture:
+    build: .
+    command: [tcpdump, -i, wg0, -U, -s, "0", -w, /captures/tunnel.pcap, net, 172.30.78.0/24]
+    network_mode: service:vpn
+    cap_add: [NET_RAW, NET_ADMIN]
+    volumes:
+      - ./captures:/captures
+    depends_on:
+      vpn:
+        condition: service_healthy
+  analyze:
+    build: .
+    command: [python, /app/analyze.py, /captures/tunnel.pcap, --output, /reports/traffic.json]
+    profiles: [tools]
+    network_mode: none
+    volumes:
+      - ./captures:/captures:ro
+      - ./reports:/reports
+networks:
+  transport:
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.30.77.0/24
+  private:
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.30.78.0/24
+volumes:
+  server-keys:
+  client-keys:

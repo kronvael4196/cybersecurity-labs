@@ -1,0 +1,10 @@
+.env
+.venv
+data
+__pycache__
+tests
+*.p12
+tls
+*.key
+*.pem
+*.pfx
