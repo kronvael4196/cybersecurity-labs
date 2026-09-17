@@ -12,6 +12,57 @@ concurrency:
   group: labs-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+  soar-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r 06-soar-automation/requirements.txt
+      - run: python -m pytest 06-soar-automation/tests/ -v
+  devsecops-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+      - run: python 09-devsecops-scanner/scanner.py .
+  new-modules-integration:
+    needs: [unit, soar-tests, devsecops-scan]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements-dev.txt
+      - name: Initialize and deploy new services
+        run: |
+          python scripts/init_labs.py
+          for project in 06-soar-automation 07-ssh-honeypot 08-identity-provider; do
+            (cd "$project" && docker compose up -d --build --wait --wait-timeout 120)
+          done
+          mkdir -p artifacts
+          docker compose -f 07-ssh-honeypot/compose.yaml exec -T honeypot python -c "import paramiko; k=paramiko.RSAKey.from_private_key_file('/app/data/ssh_host.key'); print(k.get_name(), k.get_base64())" > artifacts/honeypot-host.pub
+      - name: Exercise webhook, revocation adapter and real SSH
+        run: |
+          python scripts/smoke_new_modules.py | tee artifacts/new-modules-smoke.txt
+          docker compose -f 07-ssh-honeypot/compose.yaml exec -T honeypot python -c "import json; from pathlib import Path; rows=[json.loads(s) for s in Path('/app/logs/honeypot.json').read_text().splitlines()]; assert any(r['username']=='ci-visitor' for r in rows); print('SSH login recorded; credential values omitted')" | tee -a artifacts/new-modules-smoke.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: new-modules-functional-evidence
+          path: artifacts/new-modules-smoke.txt
+          retention-days: 14
+      - name: Stop disposable services
+        if: always()
+        run: |
+          for project in 06-soar-automation 07-ssh-honeypot 08-identity-provider; do
+            (cd "$project" && docker compose down)
+          done
   unit:
     runs-on: ubuntu-latest
     strategy:
@@ -29,7 +80,7 @@ jobs:
       - name: Validate Compose and JavaScript
         run: |
           python scripts/init_labs.py
-          for project in 01-mini-siem 02-vulnerable-home-lab 04-vpn-traffic-monitor 05-pki-digital-signature; do
+          for project in 01-mini-siem 02-vulnerable-home-lab 04-vpn-traffic-monitor 05-pki-digital-signature 06-soar-automation 07-ssh-honeypot 08-identity-provider; do
             (cd "$project" && docker compose config --quiet)
           done
           node --check 05-pki-digital-signature/static/app.js

@@ -2,7 +2,7 @@
 
 [![Labs CI](https://github.com/kronvael4196/cybersecurity-labs/actions/workflows/ci.yml/badge.svg)](https://github.com/kronvael4196/cybersecurity-labs/actions/workflows/ci.yml)
 
-Portafolio de cinco laboratorios independientes de seguridad: detección de eventos, prácticas web, reconocimiento de red, VPN y firma digital. Incluye pruebas automatizadas, HTTPS con una CA local y generación de evidencias en GitHub Actions.
+Portafolio de nueve laboratorios de seguridad: SIEM, prácticas web, reconocimiento, VPN, PKI, SOAR, honeypot SSH, identidad JWT y detección de secretos. Incluye pruebas automatizadas, HTTPS con una CA local y generación de evidencias en GitHub Actions.
 
 ## Arquitectura
 
@@ -40,6 +40,13 @@ flowchart TB
     P12 --> Sign[Firma y verificación]
   end
   Analyst --> Nginx
+  ES -->|JSON de alerta reenviado| SOAR[06 · SOAR / webhook autenticado]
+  SOAR --> Actions[Simulación o adaptadores de respuesta]
+  Honey[07 · Honeypot SSH] --> HoneyLog[JSONL local / geo opcional]
+  IDP[08 · Identidad JWT] --> JWT[Scopes / firma RSA / revocación]
+  JWT -.->|Middleware opcional| Flask
+  SOAR -.->|Revocación por jti| IDP
+  SecretScan[09 · Escáner de secretos] --> CI
   Analyst --> Kibana
   Analyst --> Scanner
   Scanner -->|Puertos publicados en loopback| WEB
@@ -56,6 +63,10 @@ flowchart TB
 | [Escáner](03-network-scanner/README.md) | Python socket, hilos, IPv4/IPv6 | Auditoría TCP, identificación conservadora e informes |
 | [VPN y tráfico](04-vpn-traffic-monitor/README.md) | WireGuard, iptables, tcpdump, TShark | Túnel privado, captura PCAP y análisis de conexiones |
 | [PKI y firma](05-pki-digital-signature/README.md) | Flask, Waitress, cryptography, SQLite, Nginx | PKCS#12, RSA-PSS/ECDSA, verificación y CRL |
+| [SOAR](06-soar-automation/README.md) | FastAPI, SQLite, iptables, HTTPX | Webhook autenticado, respuesta simulada y adaptadores reales |
+| [Honeypot SSH](07-ssh-honeypot/README.md) | Paramiko, JSON Lines, ipapi.co opcional | Credenciales ficticias, shell simulada y enriquecimiento geográfico |
+| [Identidad](08-identity-provider/README.md) | FastAPI, PyJWT, RSA, PBKDF2, SQLite | Login, scopes, verificación, revocación y middleware |
+| [DevSecOps](09-devsecops-scanner/README.md) | Python, Regex, Git | Detección de secretos y bloqueo de CI sin revelar coincidencias |
 | Automatización | pytest, pytest-html, Playwright, GitHub Actions | Tests, despliegues efímeros y evidencias |
 
 ## Requisitos y preparación
@@ -89,6 +100,11 @@ docker compose --env-file 01-mini-siem/.env -f 01-mini-siem/compose.yaml up -d -
 
 # VPN privada con cliente y captura incluidos
 docker compose -f 04-vpn-traffic-monitor/compose.yaml up -d --build
+
+# SOAR, honeypot y proveedor de identidad
+docker compose --env-file 06-soar-automation/.env -f 06-soar-automation/compose.yaml up -d --build
+docker compose -f 07-ssh-honeypot/compose.yaml up -d --build
+docker compose --env-file 08-identity-provider/.env -f 08-identity-provider/compose.yaml up -d --build
 ```
 
 | Acceso | URL / puerto |
@@ -100,10 +116,15 @@ docker compose -f 04-vpn-traffic-monitor/compose.yaml up -d --build
 | Elasticsearch | http://localhost:9200 |
 | SSH | `ssh -p 2222 analyst@127.0.0.1` |
 | VPN | Sin puertos publicados; cliente incluido |
+| SOAR / OpenAPI | http://localhost:8080/docs |
+| Honeypot SSH | `ssh -p 2223 visitante@127.0.0.1` (interno 2222) |
+| Identidad / OpenAPI | http://localhost:8001/docs |
 
 Todos los puertos se enlazan a loopback. Home Lab y VPN tienen redes internas propias. ELK funciona sin autenticación y es exclusivamente local. Para HTTPS exporta la CA pública y sigue [la guía de confianza local](docs/HTTPS.md). Los tests no omiten verificaciones TLS. El token PKI se obtiene de `05-pki-digital-signature/.env`.
 
 Si Docker no está disponible en Windows, `scripts/start_https_local.ps1` permite ejecutar Nginx portátil y la PKI local por HTTPS. No habilita virtualización ni modifica automáticamente el almacén de confianza del equipo.
+
+Los módulos nuevos también pueden ejecutarse, cada uno en su terminal, con `python scripts/run_local_module.py 06`, `07` o `08`. Se enlazan a loopback; el SOAR local fuerza simulación. Para detenerlos usa Ctrl+C. El módulo 09 es una CLI: `python 09-devsecops-scanner/scanner.py .`.
 
 ## Pruebas funcionales
 
@@ -133,6 +154,7 @@ Cada `push` y `pull_request` ejecuta [.github/workflows/ci.yml](.github/workflow
 2. Despliegue efímero Nginx/PKI y Home Lab; TLS, escáner y firma por interfaz.
 3. Despliegue ELK/SSH; fallos reales, ingesta/alerta y captura del dashboard.
 4. Informes y capturas como artefactos de la ejecución, con retención de 14 días.
+5. Jobs `soar-tests`, `devsecops-scan` y `new-modules-integration`: webhook, escaneo del repositorio, login/revocación JWT y conexión real al honeypot. Las suites de los nueve módulos también se ejecutan en ambas versiones de Python.
 
 La CA y credenciales del runner son efímeras. Los artefactos no incluyen PKCS#12, claves, bases de datos ni `.env`. El workflow despliega ambientes de prueba, no servicios públicos. Consulta [VALIDATION.md](VALIDATION.md) para el estado observado. Las evidencias de ejecuciones fallidas se conservan para diagnóstico y no se presentan como pruebas exitosas.
 

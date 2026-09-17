@@ -1,6 +1,7 @@
 import copy
 import datetime as dt
 import io
+import secrets
 import tempfile
 import unittest
 
@@ -11,8 +12,8 @@ from cryptography.hazmat.primitives.serialization import pkcs12
 from app import create_app
 from pki import PKI
 
-PASSWORD = "test-bundle-password"
-CA_PASSWORD = "test-ca-password-long"
+PASSWORD = secrets.token_urlsafe(24)
+CA_PASSWORD = secrets.token_urlsafe(32)
 TOKEN = "test-token-" + "x" * 40
 
 

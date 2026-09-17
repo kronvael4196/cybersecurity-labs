@@ -11,7 +11,11 @@ Evidencias del 17 de septiembre de 2026. Las pruebas de contenedores se ejecutar
 | Escáner | 5 | Rangos, alcance, conexión TCP real, escape HTML y ocultación de credenciales en banners |
 | Analizador VPN | 3 | Protocolos, HTTP, IPv6 y entrada vacía |
 | PKI / TLS | 12 | RSA/ECC, firma, revocación, caducidad, CA ajena, persistencia, API y validación TLS estricta |
-| **Total por versión de Python** | **31** | **Python 3.12 y 3.14** |
+| SOAR | 7 | Autenticación, bloqueo simulado, duplicados, reintento parcial, revocación y alcance de firewall |
+| Honeypot | 4 | SSH real en puerto efímero, registro, shell simulada y geolocalización con mocks |
+| Identidad | 10 | JWT, claims, caducidad, scopes, revocación persistente, middleware y límite de intentos |
+| DevSecOps | 9 | Secretos ficticios, salida CLI 1, no exposición de valores, Git ignore y errores |
+| **Total actual** | **61** | **Ejecutado en Windows con Python 3.14; matriz CI 3.12/3.14** |
 
 Las cuatro pruebas de navegador se ejecutan por separado: flujo PKI, Home Lab/escáner, informe pytest y dashboard Kibana. También se comprueban la sintaxis de los cuatro archivos Compose, el JavaScript de la PKI y los archivos versionados frente a patrones de secretos.
 
@@ -27,7 +31,9 @@ Las cuatro pruebas de navegador se ejecutan por separado: flujo PKI, Home Lab/es
 | Escáner → Home Lab | Puertos 3001, 3002 y 3003 abiertos e identificados como HTTP; informes JSON y HTML |
 | Interfaces | Juice Shop y la aplicación corregida responden y se muestran en Chromium |
 
-La [galería de evidencias](docs/evidence/README.md) conserva capturas y resultados seleccionados, con su ejecución de origen y commit. Los informes completos se descargan desde los artefactos de Actions durante 14 días.
+La [galería de evidencias](docs/evidence/README.md) conserva capturas y resultados seleccionados de los cinco módulos iniciales (31 pruebas), con su ejecución de origen y commit. Los informes completos se descargan desde los artefactos de Actions durante 14 días. La ampliación a nueve módulos añade 30 pruebas; no se atribuyen estas pruebas nuevas a aquellas capturas históricas.
+
+La prueba local `scripts/smoke_new_modules.py` también comprobó el webhook SOAR en simulación, emisión/verificación de JWT, revocación real mediante el adaptador SOAR→IDP y conexión SSH al honeypot. No ejecutó reglas de firewall ni envió notificaciones externas. CI añade el job `new-modules-integration` para repetir el flujo con contenedores. Sus resultados se conservan en `new-modules-functional-evidence`; los logs con credenciales del honeypot no se exportan.
 
 ## Entorno local y límites
 

@@ -13,4 +13,9 @@ if not path.exists():
     with path.open("x", encoding="utf-8") as file:
         file.write(example.replace("replace-with-your-local-lab-password", secrets.token_urlsafe(32)))
 subprocess.run([sys.executable, str(ROOT / "05-pki-digital-signature/init_env.py")], check=True)
+subprocess.run([sys.executable, str(ROOT / "08-identity-provider/init_env.py")], check=True)
+soar = ROOT / "06-soar-automation/.env"
+if not soar.exists():
+    with soar.open("x", encoding="utf-8") as file:
+        file.write("SOAR_WEBHOOK_TOKEN=" + secrets.token_urlsafe(32) + "\n")  # secret-scan: allow -- generated credential, not a literal secret
 print("Credenciales locales preparadas. Los archivos .env quedan fuera del repositorio.")

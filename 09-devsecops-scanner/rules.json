@@ -1,0 +1,15 @@
+{
+  "exclude_dirs": [".git", ".venv", "venv", "node_modules", "__pycache__", ".pytest_cache"],
+  "exclude_suffixes": [".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".woff", ".woff2", ".pdf", ".zip", ".pyc"],
+  "exclude_files": [".gitignore"],
+  "placeholder_prefixes": ["replace-", "change-me", "example-", "your-", "<", "${"],
+  "rules": [
+    {"id": "github-token", "pattern": "\\b(?:gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{50,})\\b"},
+    {"id": "aws-access-key", "pattern": "\\b(?:AKIA|ASIA)[A-Z0-9]{16}\\b"},
+    {"id": "slack-token", "pattern": "\\bxox[baprs]-[A-Za-z0-9-]{20,}\\b"},
+    {"id": "jwt", "pattern": "\\beyJ[A-Za-z0-9_-]{8,}\\.[A-Za-z0-9_-]{8,}\\.[A-Za-z0-9_-]{8,}\\b"},
+    {"id": "private-key", "pattern": "-----BEGIN (?:RSA |EC |OPENSSH |ENCRYPTED )?PRIVATE KEY-----"},
+    {"id": "hardcoded-credential", "pattern": "(?i)[\\\"']?\\b(?:[a-z0-9_]*(?:password|passwd|secret|api_key|admin_token|access_token|webhook_token))[\\\"']?\\s*[:=]\\s*[\\\"']([^\\\"'\\r\\n]{8,})[\\\"']", "value_group": 1},
+    {"id": "env-credential", "pattern": "(?im)^[A-Z_]*(?:PASSWORD|PASSWD|SECRET|API_KEY|ADMIN_TOKEN|ACCESS_TOKEN|WEBHOOK_TOKEN)\\s*=\\s*([^\\s\\\"'()]{8,})$", "value_group": 1}
+  ]
+}

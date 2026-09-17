@@ -8,7 +8,8 @@ import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECTS = ["01-mini-siem", "02-vulnerable-home-lab/lessons", "03-network-scanner",
-            "04-vpn-traffic-monitor", "05-pki-digital-signature"]
+            "04-vpn-traffic-monitor", "05-pki-digital-signature", "06-soar-automation",
+            "07-ssh-honeypot", "08-identity-provider", "09-devsecops-scanner"]
 
 
 def main():

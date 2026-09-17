@@ -1,0 +1,12 @@
+# Opt-in: affects this container's network namespace only, never the host firewall.
+services:
+  soar:
+    user: "0:0"
+    cap_add: [NET_ADMIN]
+    environment:
+      SOAR_MODE: live
+      SOAR_ALLOWED_NETWORKS: ${SOAR_ALLOWED_NETWORKS:?Define las redes autorizadas para el bloqueo}
+      IDP_URL: ${IDP_URL:-http://host.docker.internal:8001}
+      IDP_ADMIN_TOKEN: ${IDP_ADMIN_TOKEN:-}
+      NOTIFICATION_WEBHOOK_URL: ${NOTIFICATION_WEBHOOK_URL:-}
+    extra_hosts: ["host.docker.internal:host-gateway"]

@@ -4,7 +4,7 @@ La [galería del portafolio](evidence/README.md) conserva una selección revisad
 
 ## Local
 
-`python scripts/pytest_all.py` genera resultados reales en `artifacts/pytest/`: consola, XML JUnit, HTML autocontenido y `summary.json`. Incluye los cinco proyectos y la comprobación del certificado TLS. Estos archivos no se agregan automáticamente a Git.
+`python scripts/pytest_all.py` genera resultados reales en `artifacts/pytest/`: consola, XML JUnit, HTML autocontenido y `summary.json`. Incluye los nueve proyectos y la comprobación del certificado TLS. Estos archivos no se agregan automáticamente a Git.
 
 ## GitHub Actions
 
@@ -12,7 +12,8 @@ Abre **Actions → Labs CI → ejecución → Artifacts**. Retención: 14 días.
 
 | Artefacto | Contenido |
 | --- | --- |
-| `pytest-3.12`, `pytest-3.14` | HTML/JUnit y resumen de las cinco suites |
+| `pytest-3.12`, `pytest-3.14` | HTML/JUnit y resumen de las nueve suites |
+| `new-modules-functional-evidence` | Webhook SOAR, revocación JWT y SSH real; únicamente resultados sin credenciales |
 | `web-functional-evidence` | Firma válida/revocación por interfaz, Home Lab, puertos, captura pytest y prueba HTTP/TLS |
 | `siem-functional-evidence` | Fallos SSH, alerta real, salida ELK y captura Kibana |
 

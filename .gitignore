@@ -6,6 +6,7 @@ __pycache__/
 **/data/
 **/reports/
 **/captures/
+**/logs/
 *.p12
 *.key
 *.pfx

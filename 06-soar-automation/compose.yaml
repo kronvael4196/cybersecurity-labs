@@ -1,0 +1,21 @@
+name: soar-lab
+services:
+  soar:
+    build: .
+    environment:
+      SOAR_WEBHOOK_TOKEN: ${SOAR_WEBHOOK_TOKEN:?Ejecuta scripts/init_labs.py}
+      SOAR_MODE: dry-run
+      SOAR_DB: /app/data/actions.sqlite3
+    ports: ["127.0.0.1:8080:8080"]
+    volumes: ["soar-data:/app/data"]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+volumes:
+  soar-data:

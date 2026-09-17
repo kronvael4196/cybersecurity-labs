@@ -3,6 +3,7 @@ import json
 import os
 from pathlib import Path
 import re
+import secrets
 
 import pytest
 from playwright.sync_api import expect
@@ -24,7 +25,7 @@ def test_pki_identity_sign_verify_and_revoke(page, tmp_path):
     page.get_by_role("button", name="Conectar", exact=True).click()
     expect(page.locator("#status")).to_contain_text("Conectado")
     page.locator('#issue input[name="name"]').fill("Identidad de prueba de interfaz")
-    password = "Temporary-browser-test-2026"
+    password = secrets.token_urlsafe(24)
     page.locator('#issue input[name="password"]').fill(password)
     with page.expect_download() as download:
         page.get_by_role("button", name="Emitir y descargar .p12").click()
