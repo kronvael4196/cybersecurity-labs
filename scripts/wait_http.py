@@ -1,4 +1,5 @@
 import argparse
+import http.client
 import ssl
 import time
 import urllib.error
@@ -17,7 +18,9 @@ while time.monotonic() < deadline:
             if response.status == 200:
                 print(f"Disponible: {args.url}")
                 break
-    except (urllib.error.URLError, TimeoutError):
+    except (urllib.error.URLError, TimeoutError, ConnectionError, http.client.HTTPException) as error:
+        if isinstance(error, urllib.error.URLError) and isinstance(error.reason, ssl.SSLCertVerificationError):
+            raise
         time.sleep(2)
 else:
     raise SystemExit(f"No disponible tras {args.seconds}s: {args.url}")

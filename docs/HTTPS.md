@@ -2,6 +2,8 @@
 
 `tls-init` abre o crea la CA del volumen PKI y emite un certificado de servidor de 30 días, con SAN `localhost`, `127.0.0.1` y `::1` y uso `serverAuth`. Nginx recibe el volumen TLS en modo lectura, nunca la clave de la CA. Flask no publica directamente el puerto 5005 en Docker.
 
+Se habilitan TLS 1.2/1.3 y una redirección HTTP en el puerto 8085. No se fija HSTS sobre `localhost`: esa política afectaría también a los otros laboratorios HTTP del mismo nombre, aunque usen puertos diferentes.
+
 Desde `05-pki-digital-signature`:
 
 ```powershell
@@ -42,3 +44,21 @@ La renovación reemplaza la clave/certificado TLS. El certificado anterior sigue
 No borres el volumen PKI ni cambies `PKI_CA_PASSWORD` sin conservar su clave y secreto originales. Recrear la CA exige retirar la raíz antigua y confiar expresamente en la nueva.
 
 Referencia: [configuración HTTPS de Nginx](https://nginx.org/en/docs/http/configuring_https_servers.html).
+
+## Windows sin Docker
+
+Con el entorno Python preparado, ejecuta desde la raíz:
+
+```powershell
+.\scripts\start_https_local.ps1
+```
+
+El script descarga Nginx 1.28.3 portátil del sitio oficial en `artifacts/nginx-local`, emite el certificado con la CA de `05-pki-digital-signature/data`, inicia la PKI si no responde y sirve HTTPS en loopback. No instala la CA en Windows ni modifica PATH. Al repetirlo renueva el certificado y recarga Nginx. El backend HTTP local de desarrollo sigue en 5005; Docker es la variante que no publica ese backend.
+
+Para detener solo ese proxy portátil:
+
+```powershell
+Push-Location artifacts/nginx-local/nginx-1.28.3
+.\nginx.exe -s quit -c conf/lab.conf
+Pop-Location
+```

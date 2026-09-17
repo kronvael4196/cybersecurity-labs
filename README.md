@@ -103,6 +103,8 @@ docker compose -f 04-vpn-traffic-monitor/compose.yaml up -d --build
 
 Todos los puertos se enlazan a loopback. Home Lab y VPN tienen redes internas propias. ELK funciona sin autenticación y es exclusivamente local. Para HTTPS exporta la CA pública y sigue [la guía de confianza local](docs/HTTPS.md). Los tests no omiten verificaciones TLS. El token PKI se obtiene de `05-pki-digital-signature/.env`.
 
+Si Docker no está disponible en Windows, `scripts/start_https_local.ps1` permite ejecutar Nginx portátil y la PKI local por HTTPS. No habilita virtualización ni modifica automáticamente el almacén de confianza del equipo.
+
 ## Pruebas funcionales
 
 ```powershell

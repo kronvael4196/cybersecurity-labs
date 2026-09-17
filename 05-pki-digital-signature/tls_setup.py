@@ -27,6 +27,8 @@ def issue_tls(authority, output):
             .not_valid_before(now - dt.timedelta(minutes=1))
             .not_valid_after(min(now + dt.timedelta(days=30), authority.ca.not_valid_after_utc))
             .add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
+            .add_extension(x509.SubjectKeyIdentifier.from_public_key(key.public_key()), critical=False)
+            .add_extension(x509.AuthorityKeyIdentifier.from_issuer_public_key(authority.key.public_key()), critical=False)
             .add_extension(x509.SubjectAlternativeName([x509.DNSName("localhost"),
                  x509.IPAddress(ipaddress.ip_address("127.0.0.1")), x509.IPAddress(ipaddress.ip_address("::1"))]), critical=False)
             .add_extension(x509.ExtendedKeyUsage([ExtendedKeyUsageOID.SERVER_AUTH]), critical=False)
