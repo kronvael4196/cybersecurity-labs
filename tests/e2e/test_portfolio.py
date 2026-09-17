@@ -78,6 +78,8 @@ def test_kibana_live_dashboard(page):
     page.goto("http://localhost:5601/app/dashboards#/view/mini-siem-overview")
     expect(page.get_by_text("Mini SIEM — actividad SSH", exact=False).first).to_be_visible(timeout=120000)
     expect(page.get_by_text("Autenticaciones fallidas", exact=False).first).to_be_visible(timeout=60000)
+    page.screenshot(path=str(EVIDENCE / "kibana-diagnostic.png"), full_page=True)
+    (EVIDENCE / "kibana-diagnostic.html").write_text(page.content(), encoding="utf-8")
     # Wait for actual metric rendering, not merely the dashboard shell.
     expect(page.locator('[data-test-subj="metric_value"]').first).to_be_visible(timeout=60000)
     assert page.locator('[data-test-subj="metric_value"]').count() >= 3

@@ -77,7 +77,7 @@ tags: "_grokparsefailure"
 
 Añade las columnas `@timestamp`, `source.ip`, `user.name`, `event.outcome` y `message`. En la vista `Mini SIEM — alerts`, consulta `rule.id: "ssh-repeated-failures"` y revisa `alert.count`, `alert.window_seconds` y `source.ip`.
 
-Como ejercicio, crea visualizaciones de fallos a lo largo del tiempo, principales IP de origen y usuarios afectados. El proyecto configura vistas de datos; no incluye un dashboard preconstruido.
+Desde la raíz de la colección ejecuta `python scripts/kibana_dashboard.py` para importar el dashboard **Mini SIEM — actividad SSH**, con contadores de eventos, fallos y alertas. Ábrelo en `http://localhost:5601/app/dashboards#/view/mini-siem-overview`. Como ejercicio adicional, crea visualizaciones por IP de origen y usuario.
 
 ## Regla personalizada
 

@@ -2,7 +2,7 @@ name: vulnerable-home-lab
 services:
   juice-shop:
     image: bkimminich/juice-shop:v19.0.0
-    ports: ["127.0.0.1:3001:3000"]
+    expose: ["3000"]
     networks: [lab]
     security_opt: [no-new-privileges:true]
     cap_drop: [ALL]
@@ -10,7 +10,7 @@ services:
     build: ./lessons
     environment:
       LAB_MODE: vulnerable
-    ports: ["127.0.0.1:3002:8080"]
+    expose: ["8080"]
     networks: [lab]
     security_opt: [no-new-privileges:true]
     cap_drop: [ALL]
@@ -18,10 +18,24 @@ services:
     build: ./lessons
     environment:
       LAB_MODE: hardened
-    ports: ["127.0.0.1:3003:8080"]
+    expose: ["8080"]
     networks: [lab]
     security_opt: [no-new-privileges:true]
     cap_drop: [ALL]
+  gateway:
+    image: nginx:1.28.3-alpine
+    user: "10001:10001"
+    entrypoint: [nginx, -g, "daemon off;"]
+    ports: ["127.0.0.1:3001:3001", "127.0.0.1:3002:3002", "127.0.0.1:3003:3003"]
+    volumes:
+      - ./gateway.conf:/etc/nginx/nginx.conf:ro
+    networks: [ingress, lab]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    depends_on: [juice-shop, vulnerable, hardened]
 networks:
+  ingress:
   lab:
     internal: true

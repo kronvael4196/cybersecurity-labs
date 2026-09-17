@@ -2,6 +2,8 @@
 
 Tres aplicaciones sobre una red Docker interna: OWASP Juice Shop, un pequeño servicio deliberadamente vulnerable y su variante corregida. Los ejercicios propios permiten revisar exactamente qué cambia en el código, además de practicar en Juice Shop.
 
+Un gateway Nginx publica únicamente los tres puertos de loopback y reenvía a cada aplicación. Las aplicaciones permanecen solo en la red interna y no obtienen una ruta de salida a Internet. El gateway tiene una red de entrada separada, sin permitir destinos de proxy arbitrarios.
+
 ## Arranque
 
 Desde esta carpeta:

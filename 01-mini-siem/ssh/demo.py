@@ -15,7 +15,8 @@ def login(password):
 if __name__ == "__main__":
     for attempt in range(5):
         result = login(os.environ["SSH_PASSWORD"] + "-incorrecta")
-        if result.returncode != 5:
+        denied = result.returncode == 5 or (result.returncode == 255 and "Permission denied" in result.stderr)
+        if not denied:
             raise RuntimeError(f"Fallo inesperado en SSH: {result.stderr}")
         print(f"Fallo de autenticación {attempt + 1}/5 generado.", flush=True)
     result = login(os.environ["SSH_PASSWORD"])
