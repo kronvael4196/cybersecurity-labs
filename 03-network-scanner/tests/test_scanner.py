@@ -1,10 +1,17 @@
 import socket
 import threading
 import unittest
-from scanner import parse_ports, parse_targets, report_html, scan_port
+from scanner import parse_ports, parse_targets, report_html, sanitize_banner, scan_port
 
 
 class ScannerTests(unittest.TestCase):
+    def test_report_removes_cookie_and_authorization_values(self):
+        banner = "HTTP/1.1 200 OK\r\nSet-Cookie: session=private-example\r\nAuthorization: Bearer private-example\r\nServer: lab\r\n"
+        cleaned = sanitize_banner(banner)
+        self.assertNotIn("private-example", cleaned)
+        self.assertIn("Server: lab", cleaned)
+        self.assertIn("Set-Cookie: [redacted]", cleaned)
+
     def test_ports_ranges_and_validation(self):
         self.assertEqual(parse_ports("80,22,80,443-444"), [22, 80, 443, 444])
         for value in ("0", "65536", "90-80", "1-2-3"):

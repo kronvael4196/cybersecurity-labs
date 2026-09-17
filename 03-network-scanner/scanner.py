@@ -6,6 +6,7 @@ import errno
 import html
 import ipaddress
 import json
+import re
 from pathlib import Path
 import socket
 import time
@@ -13,6 +14,11 @@ import time
 HINTS = {21: "ftp", 22: "ssh", 23: "telnet", 25: "smtp", 53: "dns", 80: "http",
          443: "https", 2222: "ssh", 3001: "http", 3002: "http", 3003: "http",
          5005: "http", 5601: "http", 8080: "http", 9200: "http"}
+
+
+def sanitize_banner(banner):
+    return re.sub(r"(?im)^(set-cookie|authorization|proxy-authorization):[^\r\n]*",
+                  r"\1: [redacted]", banner)
 
 
 def parse_ports(spec):
@@ -69,7 +75,7 @@ def scan_port(ip, port, timeout, probe=False):
                     host = f"[{ip}]" if family == socket.AF_INET6 else ip
                     sock.sendall(f"HEAD / HTTP/1.0\r\nHost: {host}\r\n\r\n".encode("ascii"))
                 banner = sock.recv(1024).decode("utf-8", errors="replace")
-                result["banner"] = banner
+                result["banner"] = sanitize_banner(banner)
                 if banner.startswith("SSH-"):
                     result["service"] = "ssh"
                 elif banner.startswith("HTTP/"):

@@ -36,6 +36,8 @@ El programa genera `reports/scan.json` y `reports/scan.html`, salvo que cambies 
 
 `--probe` lee hasta 1024 bytes y envía `HEAD /` a puertos HTTP conocidos. Sin esa opción se limita a abrir y cerrar conexiones TCP. El HTML escapa las respuestas recibidas para que un banner no se ejecute como contenido activo.
 
+Antes de guardar un banner se ocultan los valores de `Set-Cookie`, `Authorization` y `Proxy-Authorization`, para que los informes de portafolio no incluyan credenciales o cookies de sesión.
+
 Límites: 1024 direcciones, 65536 combinaciones IP/puerto, 128 workers y timeout de 0.05 a 10 segundos. No realiza autenticaciones, explotación, detección CVE, inspección TLS ni escaneo UDP. Es un punto de partida de reconocimiento, no un sustituto de un gestor de vulnerabilidades.
 
 ## Pruebas
